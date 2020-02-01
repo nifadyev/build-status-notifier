@@ -1,44 +1,34 @@
 """Module for sending messages to Slack channels."""
 
-import requests
-# import slack
+from typing import Callable, Dict, Any
+# TODO: Check if RTMClient could be used without alias
 from slack.rtm.client import RTMClient as rtm
-# from src.ci_systems.drone import Drone
 
-# # TODO: add base abstract class for all ci_systems
-# API = 'https://drone-github.skyscannertools.net/api/repos/quotes-and-data-services/'
-# AUTHOR = 'artezio-vnifadiev'
-# CHANNEL = 'DP7AHFC13'  # ID for direct messages
-# FREQUENCY = 30  # Seconds between request to Drone CI API
-
-# # Load user credentials
-# with open('../config.json') as conf:
-#     # TODO: Also load from config AUTHOR and CHANNEL
-#     CONFIG = json.load(conf)
-#     DRONE_TOKEN = CONFIG['drone_token']
-#     SLACKBOT_TOKEN = CONFIG['slackbot_token']
-
-
-# ? Use slack.RTMCleint as parent
-# Then in main provide token and run method start() from slack.RTMCleint
-# class Slack():
 
 class Slack(rtm):
+    """Class for sending messages and listening to them via Slack API."""
 
-    def __init__(self, token, ci_system):
+    def __init__(self, token: str, ci_system: Callable) -> None:
+        """Initialize class instance and listen to incoming messages.
+
+        Args:
+            token: Slack Bot unique token.
+            ci_system: Instance of Drone, Travis or Jenkins class.
+        """
         super(Slack, self).__init__(token=token)
         self.ci_system = ci_system
+
         self.on(event='message', callback=self.listen)
 
-    # @rtm.run_on(event='message')
-    def listen(self, **payload):
-        """Listen to bot for incoming messages.
+    def listen(self, **payload: Dict[str, Any]) -> None:
+        """Listen for incoming messages and handle them using external functions.
 
-        param: payload - 
-
-        returns: None
+        Args:
+            payload - The initial state returned when establishing an RTM connection.
         """
+        # TODO: Replace to logger and print received message
         print('message received\n')
+
         data = payload['data']
         web_client = payload['web_client']
         command_and_args = data.get('text', []).split()
@@ -51,31 +41,44 @@ class Slack(rtm):
             self.ci_system.execute_command(web_client, *command_and_args)
 
     @staticmethod
-    def get_message_header(build):
-        """Return message header based on build type."""
+    def get_message_header(build: Dict[str, Any]) -> str:
+        """Return message header based on build type.
+
+        Args:
+            build: dict with information about build.
+
+        Returns:
+            str: human representation of build status and what type of build was finished.
+        """
         if build['event'] == 'pull_request':
             return 'Pull request check has been completed'
-        elif build['event'] == 'push' and build['branch'] == 'master':
+        if build['event'] == 'push' and build['branch'] == 'master':
             return 'Merge check has been completed'
-        elif build['event'] == 'push':
+        if build['event'] == 'push':
             return 'Feature branch check has been completed'
-        else:
-            return 'Unsupported type of event'
+
+        return 'Unsupported type of event'
 
     @staticmethod
-    def make_message(build):
-        """Create proper message about the build's status."""
-        # TODO: Add extra info for failed builds
+    def make_message(build: Dict[str, Any]) -> str:
+        """Create informative message about the build's status.
 
-        execution_time_minutes = (build['finished_at'] - build['started_at']) // 60
-        execution_time_seconds = (build['finished_at'] - build['started_at']) % 60
+        Args:
+            build: dict with information about build.
+
+        Returns:
+            str: detailed information about build execution.
+        """
+        # TODO: Add extra info for failed builds
+        execution_time = build['finished_at'] - build['started_at']
+        execution_time_minutes = execution_time // 60
+        execution_time_seconds = execution_time % 60
         message_header = Slack.get_message_header(build)
-        message = (
+
+        return (
             f'{message_header}\n\n'
             f"Commit: {build['message']}\n"
             f"Status: {build['status']}\n"
             f"Execution time: {execution_time_minutes} minutes "
             f"{execution_time_seconds} seconds"
         )
-
-        return message
