@@ -1,11 +1,10 @@
 """Module for sending messages to Slack channels."""
 
 from typing import Callable, Dict, Any
-# TODO: Check if RTMClient could be used without alias
-from slack.rtm.client import RTMClient as rtm
+from slack import RTMClient, WebClient
 
 
-class Slack(rtm):
+class Slack(RTMClient):
     """Class for sending messages and listening to them via Slack API."""
 
     def __init__(self, token: str, ci_system: Callable) -> None:
@@ -82,3 +81,34 @@ class Slack(rtm):
             f"Execution time: {execution_time_minutes} minutes "
             f"{execution_time_seconds} seconds"
         )
+
+    @staticmethod
+    def send_message(web_client: WebClient, channel_id: str, message: str) -> bool:
+        """Send message to channel using provided WebClient and return request status.
+
+        Args:
+            web_client: Slack web client.
+            channel_id: Slack channel ID.
+            message: message to be sent.
+
+        Returns:
+            bool: True or False request execution status.
+        """
+        if web_client:
+            response = web_client.chat_postMessage(
+                channel=channel_id,
+                text=message
+            )
+
+            return response['ok']
+        return False
+        # * For now web_client is always passed
+        # else:
+        #     requests.post(
+        #         url='https://slack.com/api/chat.postMessage',
+        #         json={"channel": "DP7AHFC13", "text": message},
+        #         headers={
+        #             "Content-Type": "application/json; charset=utf-8",
+        #             "Authorization": f"Bearer {SLACKBOT_TOKEN}"
+        #         }
+        #     )
