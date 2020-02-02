@@ -1,35 +1,23 @@
 """Module for dealing with Drone CI API."""
 
-import os
 import json
 import time
 import requests
-# import src.notifiers.slack as slack
 from src.notifiers.slack import Slack
 
-# fileDir = os.path.dirname(os.path.realpath('__file__'))
-# print(fileDir)
-
 # TODO: add base abstract class for all ci_systems
-API = 'https://drone-github.skyscannertools.net/api/repos/quotes-and-data-services/'
-AUTHOR = 'artezio-olgas'
-# AUTHOR = 'artezio-vnifadiev'
-CHANNEL = 'DP7AHFC13'  # ID for direct messages
 FREQUENCY = 30  # Seconds between request to Drone CI API
-
-# Load user credentials
-# TODO: Change to path relatively repo (use sys envs)
-with open('/home/nifadyev/storage/Code/Work/drone-ci-bot/config.json') as conf:
-    # TODO: Also load from config AUTHOR and CHANNEL
-    CONFIG = json.load(conf)
-    DRONE_TOKEN = CONFIG['drone_token']
 
 
 class Drone():
-    # TODO: Also somehow pass repos links or just one repo link
-    # def __init__(self, api, repos, token):
-    # def __init__(self):
-        # self.notifier = Slack()
+    def __init__(self, config):
+        # TODO: pass only Drone part of config
+        self.token = config['drone']['token']
+        self.author = config['drone']['author']
+        self.channel = config['slack']['bot_direct_messages_id']
+        self.repositories = config['drone']['repositories']
+        self.root_url = config['drone']['root_url']
+        self.frequency = config['drone']['request_frequency']
 
     def execute_command(self, web_client, command, args=None):
         """Execute requested command with optional arguments.
@@ -40,9 +28,8 @@ class Drone():
 
         returns: execution status
         """
-        print(web_client)
         if command == 'monitor':
-            self.monitor_active_builds(web_client, args, author=AUTHOR)
+            self.monitor_active_builds(web_client, args, author=self.author)
         else:
             print('Unsupported command')
 
@@ -50,7 +37,7 @@ class Drone():
     # Read this every N seconds, delete finished build from this list
     # Repeat till list is empty
     def monitor_active_builds(self, web_client=None, repository='integrations', author='all'):
-        monitored_builds = self.get_running_builds(repository, author=AUTHOR, flag=False)
+        monitored_builds = self.get_running_builds(repository, author=self.author, flag=False)
         # print(monitored_builds)
         if not monitored_builds:
             print('Running builds not found')
@@ -62,18 +49,18 @@ class Drone():
 
         # Run endless loop till all build are finished
         while True:
-            running_builds = self.get_running_builds(repository, author=AUTHOR, flag=True)
+            running_builds = self.get_running_builds(repository, author=self.author, flag=True)
             print(f'{len(running_builds)} builds are are still in progress')
             # Initial builds are still being ran
             if running_builds == monitored_builds:
-                time.sleep(FREQUENCY)
+                time.sleep(self.request_frequency)
                 continue
 
             # TODO: try to make only 1 request and filter finished builds
             for build in self.get_finished_builds(monitored_builds, running_builds):
                 # Use Session to optimize requests response time
                 # request = requests.get(
-                #     f'{API}{repository}/builds/{build["number"]}',
+                #     f'{self.root_url}{repository}/builds/{build["number"]}',
                 #     headers={'Authorization': f'Bearer {DRONE_TOKEN}'}
                 # )
                 # finished_build = json.loads(request.content)
@@ -87,7 +74,7 @@ class Drone():
                 # ! SLACK Part
                 if web_client:
                     web_client.chat_postMessage(
-                        channel=CHANNEL,
+                        channel=self.channel,
                         text=message
                     )
                 # else:
@@ -108,7 +95,7 @@ class Drone():
                 # ! SLACK Part
                 if web_client:
                     web_client.chat_postMessage(
-                        channel=CHANNEL,
+                        channel=self.channel,
                         text='Running builds are finished'
                     )
                     break
@@ -123,13 +110,13 @@ class Drone():
                 #     )
                 #     break
 
-            time.sleep(FREQUENCY)
+            time.sleep(self.request_frequency)
 
     def get_running_builds(self, repository, author='all', flag=False):
     # def get_running_builds(self, repository, author='all'):
         # Get list of all builds
         # request = requests.get(
-        #     f'{API}{repository}/builds',
+        #     f'{self.root_url}{repository}/builds',
         #     headers={'Authorization': f'Bearer {DRONE_TOKEN}'}
         # )
         # builds = json.loads(request.content)
@@ -170,7 +157,7 @@ class Drone():
                     'url': build['link_url']
                 }
                 for build in builds
-                if build['author'] == AUTHOR and (build['status'] == 'pending' or build['status'] == 'running')
+                if build['author'] == self.author and (build['status'] == 'pending' or build['status'] == 'running')
             ]
 
         return running_builds

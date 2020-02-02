@@ -39,7 +39,9 @@ def run_bot(ci_system: Union[Type[Drone], ], notifier: Union[Type[Slack], ]) -> 
     """
     config = load_config(CONFIG_PATH)
     # ? How to get required tokens based on chosen ci_system and notifier
-    chosen_notifier = notifier(config['slackbot_token'], ci_system())
+    chosen_notifier = notifier(config['slack']['token'], ci_system(config))
+    # chosen_notifier = notifier(config['slack']['token'], ci_system(config['drone']))
+    # chosen_notifier = notifier(config['slackbot_token'], ci_system())
     chosen_notifier.start()
 
 
