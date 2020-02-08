@@ -78,7 +78,7 @@ class Drone():
             repository: Supported repository name.
             author: author name in Drone.
         """
-        monitored_builds = self.get_running_builds(repository, flag=False)
+        monitored_builds = self.get_running_builds(repository)
 
         # Initial check for author's active builds
         if not monitored_builds:
@@ -91,7 +91,7 @@ class Drone():
 
         # Run endless loop till all build are finished
         while True:
-            running_builds = self.get_running_builds(repository, flag=True)
+            running_builds = self.get_running_builds(repository)
             # ? It is necessary per each iteration
             print(f'{len(running_builds)} builds are are still in progress')
 
@@ -103,15 +103,14 @@ class Drone():
 
             # TODO: try to make only 1 request and filter finished builds
             for build in self.get_finished_builds(monitored_builds, running_builds):
-                # TODO: Test using requests Mock
                 # Use Session to optimize requests response time
-                # request = requests.get(
-                #     f'{self.root_url}{repository}/builds/{build["number"]}',
-                #     headers={'Authorization': f'Bearer {DRONE_TOKEN}'}
-                # )
+                request = requests.get(
+                    f'{self.root_url}{repository}/builds/{build["number"]}',
+                    headers={'Authorization': f'Bearer {self.token}'}
+                )
+                # * Use for test only
+                finished_build = request.content
                 # finished_build = json.loads(request.content)
-                with open('/home/nifadyev/storage/Code/Work/drone-ci-bot/finished_build.json') as bld:
-                    finished_build = json.loads(bld.read())
                 # Do not send message if build status has changed from `pending` to `running`
                 if finished_build['status'] in ('pending', 'running'):
                     continue
@@ -134,7 +133,6 @@ class Drone():
     def get_running_builds(
             self,
             repository: str,
-            flag: bool = False
     ) -> Tuple[Dict[str, Union[str, int]]]:
         """Return list of active builds for specified repository and author.
 
@@ -145,17 +143,13 @@ class Drone():
                 tuple: sequence of active author's builds.
         """
         # Get list of all builds
-        # request = requests.get(
-        #     f'{self.root_url}{repository}/builds',
-        #     headers={'Authorization': f'Bearer {DRONE_TOKEN}'}
-        # )
+        request = requests.get(
+            f'{self.root_url}{repository}/builds',
+            headers={'Authorization': f'Bearer {self.token}'}
+        )
+        # * Use for test only
+        builds = request.content
         # builds = json.loads(request.content)
-        if not flag:
-            with open('/home/nifadyev/storage/Code/Work/drone-ci-bot/initial_builds.json') as blds:
-                builds = json.loads(blds.read())
-        else:
-            with open('/home/nifadyev/storage/Code/Work/drone-ci-bot/1_build_is_finished.json') as blds:
-                builds = json.loads(blds.read())
 
         return tuple(
             {

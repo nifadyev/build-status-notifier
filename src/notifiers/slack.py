@@ -1,8 +1,13 @@
 """Module for sending messages to Slack channels."""
-
+import requests
+import json
 from typing import Callable, Dict, Any
 from slack import RTMClient, WebClient
 
+
+with open('/home/nifadyev/code/build-status-notifier/config.json') as conf:
+    CONFIG = json.load(conf)
+    SLACKBOT_TOKEN = CONFIG['slack']['token']
 
 class Slack(RTMClient):
     """Class for sending messages and listening to them via Slack API."""
@@ -101,14 +106,17 @@ class Slack(RTMClient):
             )
 
             return response['ok']
-        return False
+        # return False
         # * For now web_client is always passed
-        # else:
-        #     requests.post(
-        #         url='https://slack.com/api/chat.postMessage',
-        #         json={"channel": "DP7AHFC13", "text": message},
-        #         headers={
-        #             "Content-Type": "application/json; charset=utf-8",
-        #             "Authorization": f"Bearer {SLACKBOT_TOKEN}"
-        #         }
-        #     )
+        # ! Except for testing purposes
+        else:
+            response = requests.post(
+                url='https://slack.com/api/chat.postMessage',
+                json={"channel": "DP7AHFC13", "text": message},
+                headers={
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": f"Bearer {SLACKBOT_TOKEN}"
+                }
+            )
+
+            return response.status_code == '200'
