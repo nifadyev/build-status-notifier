@@ -23,6 +23,9 @@ It is planned as fully automated solution out-of-the-box. The only thing develop
     "slack": {
         "token": "slack_bot_token_unique_for_each_workspace",
         "bot_direct_messages_id": "channel_id"
+    },
+    "travis": {
+        "token": "travis_api_token"
     }
 }
 ```
