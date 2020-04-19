@@ -5,7 +5,8 @@ from typing import Callable, Dict, Any
 from slack import RTMClient, WebClient
 
 
-with open('/home/nifadyev/code/build-status-notifier/config.json') as conf:
+# with open('/home/nifadyev/code/build-status-notifier/config.json') as conf:
+with open('config.json') as conf:
     CONFIG = json.load(conf)
     SLACKBOT_TOKEN = CONFIG['slack']['token']
 
@@ -37,11 +38,11 @@ class Slack(RTMClient):
         web_client = payload['web_client']
         command_and_args = data.get('text', []).split()
 
-
         # Only messages like 'monitor skippy' are supported
         # This check fixes Exception after notifying about finished builds
         # But later it should be improved
         if len(command_and_args) == 2:
+            # self.ci_system.execute_command(web_client, slack=self)
             self.ci_system.execute_command(web_client, *command_and_args)
 
     @staticmethod
@@ -120,3 +121,6 @@ class Slack(RTMClient):
             )
 
             return response.status_code == '200'
+
+# ! send text rich messages via WebClient, because RTMClient does not support it
+# RTMClient.
