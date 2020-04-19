@@ -2,13 +2,20 @@
 
 import json
 import time
-import requests
-from src.notifiers.slack import Slack
 from typing import Dict, Any, Union, List, Tuple
+
+import requests
 from slack.web.client import WebClient
+
+from src.notifiers.slack import Slack
 
 
 # TODO: add base abstract class for all ci_systems
+# ! template
+# class Effable(object, metaclass=abc.ABCMeta):
+#     @abc.abstractmethod
+#     def __str__(self):
+#         raise NotImplementedError('users must define __str__ to use this base class')
 # TODO: make information about progress more specific
 # TODO: make custom type `build` from Tuple[Dict[str, Union[str, int]]]
 
@@ -29,7 +36,7 @@ class Drone():
             channel: bot direct message ID.
             repositories: list of monitored repositories.
             root_url: root for full repository url.
-            frequency: interval in seconds between consecutive request to API.
+            frequency: interval in seconds between consecutive requests to API.
         """
         # TODO: pass only Drone part of config
         self.token = config['drone']['token']
@@ -112,6 +119,7 @@ class Drone():
                 finished_build = request.content
                 # finished_build = json.loads(request.content)
                 # Do not send message if build status has changed from `pending` to `running`
+                # TODO: check this values for Travis and move this to common const
                 if finished_build['status'] in ('pending', 'running'):
                     continue
 
@@ -130,17 +138,14 @@ class Drone():
 
             time.sleep(self.frequency)
 
-    def get_running_builds(
-            self,
-            repository: str,
-    ) -> Tuple[Dict[str, Union[str, int]]]:
+    def get_running_builds(self, repository: str) -> Tuple[Dict[str, Union[str, int]]]:
         """Return list of active builds for specified repository and author.
 
-            Args:
-                repository: Supported repository name.
+        Args:
+            repository: Supported repository name.
 
-            Returns:
-                tuple: sequence of active author's builds.
+        Returns:
+            tuple: sequence of active author's builds.
         """
         # Get list of all builds
         request = requests.get(
@@ -151,11 +156,15 @@ class Drone():
         builds = request.content
         # builds = json.loads(request.content)
 
+        # TODO: calculate build duration, does not pass started_at and finished_at
+        # TODO: move to sep func
         return tuple(
             {
+                # ? rename to build id if it is id
                 'number': build['number'],
                 'event': build['event'],
                 'status': build['status'],
+                # ? is branch used somewhere
                 'branch': build['branch'],
                 'commit message': build['message'],
                 'started_at': build['started_at'],
@@ -163,10 +172,12 @@ class Drone():
                 'url': build['link_url']
             }
             for build in builds
+            # TODO: move build status check to sep func
             if build['author'] == self.author\
                 and (build['status'] == 'pending' or build['status'] == 'running')
         )
 
+    # ! Common module
     def get_finished_builds(
             self,
             initial_builds: Tuple[Dict[str, Union[str, int]]],
