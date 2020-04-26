@@ -31,7 +31,6 @@ class Slack(RTMClient):
         Args:
             payload - The initial state returned when establishing an RTM connection.
         """
-        # TODO: Replace to logger and print received message
         print('message received\n')
 
         data = payload['data']
@@ -74,18 +73,17 @@ class Slack(RTMClient):
         Returns:
             str: detailed information about build execution.
         """
-        # TODO: Add extra info for failed builds
-        execution_time = build['finished_at'] - build['started_at']
-        execution_time_minutes = execution_time // 60
-        execution_time_seconds = execution_time % 60
+        # execution_time = build['finished_at'] - build['started_at']
+        # execution_time_minutes = execution_time // 60
+        # execution_time_seconds = execution_time % 60
         message_header = Slack.get_message_header(build)
 
         return (
             f'{message_header}\n\n'
             f"Commit: {build['message']}\n"
             f"Status: {build['status']}\n"
-            f"Execution time: {execution_time_minutes} minutes "
-            f"{execution_time_seconds} seconds"
+            # f"Execution time: {execution_time_minutes} minutes "
+            # f"{execution_time_seconds} seconds"
         )
 
     @staticmethod

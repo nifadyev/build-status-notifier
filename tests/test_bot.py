@@ -2,8 +2,12 @@
 
 import sys
 import pytest
+import json
 import bot
+from unittest import mock
 from src.ci_systems.drone import Drone
+from src.ci_systems.travis import Travis
+import src.ci_systems.travis as travis
 from src.notifiers.slack import Slack
 
 
@@ -23,29 +27,38 @@ class MockResponse:
 class TestBot:
 
     # * Some kind of smoke test
-    def test_drone(self, mocker):
+    def test_travis_builds_are_passed(self):
+        travis.requests = mock.Mock()
+        # Slack.send_message = mock.Mock()
 
-        # bot.load_config = mocker.Mock()
+        with open('tests/travis_examples/running_builds.json') as initial_builds, \
+                open('tests/travis_examples/finished_builds_passed.json') as finished_build, \
+                open('tests/travis_examples/passed_build.json') as passed_build:
 
-        trello.requests = mocker.Mock()
+            travis.requests.get.side_effect = [
+                MockResponse(json.load(initial_builds), 200),
+                MockResponse(json.load(finished_build), 200),
+                MockResponse(json.load(passed_build), 200),
+            ]
 
-        with open('/home/nifadyev/code/build-status-notifier/tests/drone_ci_examples/initial_builds_integrations.json') as initial_builds, \
-                open('/home/nifadyev/code/build-status-notifier/tests/drone_ci_examples/one_build_is_finished_integrations.json') as builds_with_one_finished_build, \
-                open('/home/nifadyev/code/build-status-notifier/tests/drone_ci_examples/finished_build_integrations.json') as finished_build:
 
-        trello.requests.get.return_value = MockResponse(tickets, 200)
-
-        bot.run_bot(Drone, Slack)
         
-        # TODO: manually send message
-        # requests.post(
-        #     url='https://slack.com/api/chat.postMessage',
-        #     json={"channel": "DP7AHFC13", "text": message},
-        #     headers={
-        #         "Content-Type": "application/json; charset=utf-8",
-        #         "Authorization": f"Bearer {SLACKBOT_TOKEN}"
-        #     }
-        # )
+        bot.run_bot(Travis, Slack)
+    #     # ! manually kill test
 
-        # TODO: terminate bot using os or smth else
-        sys.exit()
+        travis.requests.get.assert_called_once()
+
+    # def test_travis_build_has_failed(self):
+    #     travis.requests = mock.Mock()
+    #     # Slack.send_message = mock.Mock()
+
+    #     with open('tests/travis_examples/running_builds.json') as initial_builds, \
+    #             open('tests/travis_examples/finished_builds_failed.json') as finished_build:
+
+    #         travis.requests.get.side_effect = [
+    #             MockResponse(json.load(initial_builds), 200),
+    #             MockResponse(json.load(finished_build), 200),
+    #         ]
+        
+    #     bot.run_bot(Travis, Slack)
+        # ! manually kill test
