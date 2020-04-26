@@ -10,16 +10,6 @@ from slack.web.client import WebClient
 from src.notifiers.slack import Slack
 
 
-# TODO: add base abstract class for all ci_systems
-# ! template
-# class Effable(object, metaclass=abc.ABCMeta):
-#     @abc.abstractmethod
-#     def __str__(self):
-#         raise NotImplementedError('users must define __str__ to use this base class')
-# TODO: make information about progress more specific
-# TODO: make custom type `build` from Tuple[Dict[str, Union[str, int]]]
-
-
 class Drone():
     """Class for sending requests via Drone API and parsing their response."""
 
@@ -38,7 +28,6 @@ class Drone():
             root_url: root for full repository url.
             frequency: interval in seconds between consecutive requests to API.
         """
-        # TODO: pass only Drone part of config
         self.token = config['drone']['token']
         self.author = config['drone']['author']
         self.channel = config['slack']['bot_direct_messages_id']
@@ -119,7 +108,6 @@ class Drone():
                 finished_build = request.content
                 # finished_build = json.loads(request.content)
                 # Do not send message if build status has changed from `pending` to `running`
-                # TODO: check this values for Travis and move this to common const
                 if finished_build['status'] in ('pending', 'running'):
                     continue
 
@@ -130,7 +118,6 @@ class Drone():
             monitored_builds = running_builds
 
             if not monitored_builds:
-                # ! MAIN
                 print('Finishing monitoring')
                 if not Slack.send_message(web_client, self.channel, 'Running builds are finished'):
                     print(f'Message has not been sent to {self.channel}')
@@ -157,7 +144,6 @@ class Drone():
         # builds = json.loads(request.content)
 
         # TODO: calculate build duration, does not pass started_at and finished_at
-        # TODO: move to sep func
         return tuple(
             {
                 # ? rename to build id if it is id
@@ -172,12 +158,10 @@ class Drone():
                 'url': build['link_url']
             }
             for build in builds
-            # TODO: move build status check to sep func
             if build['author'] == self.author\
                 and (build['status'] == 'pending' or build['status'] == 'running')
         )
 
-    # ! Common module
     def get_finished_builds(
             self,
             initial_builds: Tuple[Dict[str, Union[str, int]]],
