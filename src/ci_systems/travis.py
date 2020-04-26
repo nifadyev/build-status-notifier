@@ -1,11 +1,9 @@
 """Module for dealing with Travis CI API."""
 
-import json
 import time
 # from typing import Dict, Any, Union, List, Tuple
 
 import requests
-from slack.web.client import WebClient
 
 from src.notifiers.slack import Slack
 
@@ -13,6 +11,7 @@ from src.notifiers.slack import Slack
 # ! And last strings from log
 # TODO: get last strings from JSON logs
 # ! 2 requests from get_running_builds(), 1 for getting jobs, 1 for log
+
 
 class Travis():
     """Class for sending requests via Travis API and parsing their response."""
@@ -93,7 +92,6 @@ class Travis():
 
         # Run endless loop till all build are finished
         while True:
-            # import pdb; pdb.set_trace()
             running_builds = self.get_running_builds()
             # ? It is necessary per each iteration
             print(f'{len(running_builds)} builds are are still in progress')
@@ -114,15 +112,42 @@ class Travis():
                     }
                 )
                 finished_build = self.parse_build(request)
+
                 # Do not send message if build status has changed from `pending` to `running`
                 # TODO: check this values for Travis and move this to common const
                 if finished_build['status'] in ('pending', 'running'):
-                # if finished_build['state'] in ('pending', 'running'):
                     status.append(finished_build['status'])
                     continue
 
                 status.append(finished_build['status'])
-                message = Slack.make_message(finished_build)
+                # TODO this
+                if finished_build['status'] == 'failed':
+                    jobs_request = requests.get(
+                        f'https://travis-ci.com/github/nifadyev/cubic-spline-interpolator/jobs/{finished_build["id"]}',
+                        headers={
+                            'Travis-API-Version': '3',
+                            'User-Agent': 'API Explorer',
+                            'Authorization': f'token {self.token}'
+                        }
+                    )
+                    jobs = jobs_request.json()
+                    failed_job = self.get_failed_job(jobs_request.json())
+
+                    # ! Does not suitable for multiple failed jobs
+                    jobs_log_request = requests.get(
+                        f'https://api.travis-ci.com/job/{failed_job["id"]}/log',
+                        headers={
+                            'Travis-API-Version': '3',
+                            'User-Agent': 'API Explorer',
+                            'Authorization': f'token {self.token}'
+                        }
+                    )
+                    jobs_log = jobs_log_request.json()['content']
+                    error_strings = jobs_log.splitlines()[-3:]
+                    message = Slack.make_failure_message(finished_build, error_strings)
+                else:
+                    message = Slack.make_message(finished_build)
+                # message = Slack.make_message(finished_build)
                 if not Slack.send_message(web_client, self.channel, message):
                     print(f'Message has not been sent to {self.channel}')
 
@@ -155,11 +180,7 @@ class Travis():
             }
         )
 
-        # ? requests.json()
         builds = request.json()['builds']
-        # import pdb; pdb.set_trace()
-        # print(builds == json.loads(request.content)['builds'])
-        # builds = json.loads(request.content)['builds']
 
         # TODO: calculate build duration, does not pass started_at and finished_at
         # ! Everything is correct, builds are finished, that is why empty tuple is returned
@@ -179,11 +200,8 @@ class Travis():
             for build in builds
             if build['created_by']['login'] == self.author\
                 and (build['state'] == 'pending' or build['state'] == 'running')
-                # and (build['state'] == 'pending' or build['state'] == 'running')
         )
 
-    # ! Broken for travis
-    # Return build with 'running' status
     def get_finished_builds(self, initial_builds, running_builds):
         """Return finished builds by comparing current running builds with initial builds.
 
@@ -196,11 +214,6 @@ class Travis():
         """
         # Too expensive comparison, use smth like shallow comparison
         return tuple(build for build in initial_builds if build not in running_builds)
-
-        # return tuple(
-        #     build for build in running_builds
-        #     if build['status'] not in ('pending', 'running') and build in initial_builds
-        # )
 
     def parse_build(self, request):
         build = request.json()
@@ -218,18 +231,9 @@ class Travis():
             'finished_at': build['finished_at'],
             'url': build['commit']['compare_url']
         }
-    def send_example_request(self):
-        request = requests.get(
-            # * get info about all repos
-            # 'https://api.travis-ci.com/repos',
-            f'https://api.travis-ci.com/repo/{self.repository_id}/builds',
-            headers={
-                'Travis-API-Version': '3',
-                'User-Agent': 'API Explorer',
-                'Authorization': f'token {self.token}'
-            }
-        )
 
-        print(request.status_code)
-        with open('running_builds.json', 'w+', encoding='utf-8') as output:
-            json.dump(request.json(), output, indent=4)
+    def get_failed_job(self, jobs):
+        # ? Or just get_failed_job_id
+        for job in jobs['jobs']:
+            if job['state'] == 'failed':
+                return job

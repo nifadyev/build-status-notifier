@@ -87,6 +87,19 @@ class Slack(RTMClient):
         )
 
     @staticmethod
+    def make_failure_message(build: Dict[str, Any], error_strings) -> str:
+        message_header = Slack.get_message_header(build)
+
+        return (
+            f'{message_header}\n\n'
+            f"Commit: {build['message']}\n"
+            f"Status: {build['status']}\n"
+            f'Last 3 strings from log:\n{error_strings}\n'
+            # f"Execution time: {execution_time_minutes} minutes "
+            # f"{execution_time_seconds} seconds"
+        )
+
+    @staticmethod
     def send_message(web_client: WebClient, channel_id: str, message: str) -> bool:
         """Send message to channel using provided WebClient and return request status.
 

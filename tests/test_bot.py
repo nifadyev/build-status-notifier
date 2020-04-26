@@ -1,6 +1,5 @@
 """Module for testing basic bot functions."""
 
-import sys
 import pytest
 import json
 import bot
@@ -27,6 +26,7 @@ class MockResponse:
 class TestBot:
 
     # * Some kind of smoke test
+    @pytest.mark.skip
     def test_travis_builds_are_passed(self):
         travis.requests = mock.Mock()
         # Slack.send_message = mock.Mock()
@@ -41,24 +41,26 @@ class TestBot:
                 MockResponse(json.load(passed_build), 200),
             ]
 
-
-        
         bot.run_bot(Travis, Slack)
-    #     # ! manually kill test
+        # ! manually kill test
 
         travis.requests.get.assert_called_once()
 
-    # def test_travis_build_has_failed(self):
-    #     travis.requests = mock.Mock()
-    #     # Slack.send_message = mock.Mock()
+    def test_travis_build_has_failed(self):
+        travis.requests = mock.Mock()
 
-    #     with open('tests/travis_examples/running_builds.json') as initial_builds, \
-    #             open('tests/travis_examples/finished_builds_failed.json') as finished_build:
+        with open('tests/travis_examples/running_builds.json') as initial_builds, \
+                open('tests/travis_examples/finished_builds_failed.json') as finished_build, \
+                open('tests/travis_examples/failed_build.json') as failed_build, \
+                open('tests/travis_examples/1_failed_job.json') as failed_jobs, \
+                open('tests/travis_examples/failed_job_log.json') as failed_job_log:
 
-    #         travis.requests.get.side_effect = [
-    #             MockResponse(json.load(initial_builds), 200),
-    #             MockResponse(json.load(finished_build), 200),
-    #         ]
+            travis.requests.get.side_effect = [
+                MockResponse(json.load(initial_builds), 200),
+                MockResponse(json.load(finished_build), 200),
+                MockResponse(json.load(failed_build), 200),
+                MockResponse(json.load(failed_jobs), 200),
+                MockResponse(json.load(failed_job_log), 200),
+            ]
         
-    #     bot.run_bot(Travis, Slack)
-        # ! manually kill test
+        bot.run_bot(Travis, Slack)
