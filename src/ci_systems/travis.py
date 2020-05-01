@@ -6,7 +6,8 @@ import time
 import requests
 
 from src.notifiers.slack import Slack
-
+# TODO: Check if it is working
+# from src.notifiers.slack.Slck import send_message
 
 class Travis():
     """Class for sending requests via Travis API and parsing their response."""
@@ -128,14 +129,15 @@ class Travis():
                 else:
                     message = Slack.make_message(finished_build)
 
-                if not Slack.send_message(web_client, self.channel, message):
+                # ? Yield messages from monitor_active_builds and execute_commands
+                if not Slack.send_message(self.channel, message):
                     print(f'Message has not been sent to {self.channel}')
 
             monitored_builds = running_builds
 
             if not monitored_builds:
                 print('Finishing monitoring')
-                if not Slack.send_message(web_client, self.channel, 'Running builds are finished'):
+                if not Slack.send_message(self.channel, 'Running builds are finished'):
                     print(f'Message has not been sent to {self.channel}')
                 # This  break does not end endless loop, use some flag to end it (or never end it)
                 break

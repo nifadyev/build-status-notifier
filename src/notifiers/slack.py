@@ -2,7 +2,8 @@
 import requests
 import json
 from typing import Callable, Dict, Any, List
-from slack import RTMClient, WebClient
+from slack import RTMClient
+
 from .message_templates import BRANCH_SUCCESS_BLOCKS, BRANCH_FAIL_BLOCKS
 
 
@@ -11,17 +12,21 @@ with open('config.json') as conf:
     CONFIG = json.load(conf)
     SLACKBOT_TOKEN = CONFIG['slack']['token']
 
+
 class Slack(RTMClient):
     """Class for sending messages and listening to them via Slack API."""
 
-    def __init__(self, token: str, ci_system: Callable) -> None:
+    def __init__(self, config, ci_system: Callable) -> None:
         """Initialize class instance and listen to incoming messages.
 
         Args:
             token: Slack Bot unique token.
             ci_system: Instance of Drone, Travis or Jenkins class.
         """
-        super(Slack, self).__init__(token=token)
+        super(Slack, self).__init__(token=config['token'])
+
+        self.token = config['token']
+        self.channel_id = config['bot_direct_messages_id']
         self.ci_system = ci_system
 
         self.on(event='message', callback=self.listen)
@@ -36,15 +41,16 @@ class Slack(RTMClient):
 
         data = payload['data']
         web_client = payload['web_client']
+        # ! Check why default value is list
+        print(data.get('text'))
         command_and_args = data.get('text', []).split()
 
         # Only messages like 'monitor skippy' are supported
         # This check fixes Exception after notifying about finished builds
-        # But later it should be improved
         if len(command_and_args) == 2:
-            # self.ci_system.execute_command(web_client, slack=self)
             self.ci_system.execute_command(web_client, *command_and_args)
 
+    # TODO: Accept only event and branch (or flag is_merge_commit)
     @staticmethod
     def get_message_header(build: Dict[str, Any]) -> str:
         """Return message header based on build type.
@@ -74,15 +80,13 @@ class Slack(RTMClient):
         Returns:
             str: detailed information about build execution.
         """
-        execution_time_minutes = build['duration'] // 60
-        execution_time_seconds = build['duration'] % 60
 
         message = BRANCH_SUCCESS_BLOCKS.copy()
 
         message[1]['text']['text'] = (
             f'*Branch:*\n {build["branch"]} \n'
             f'*Commit:*\n {build["message"]} \n'
-            f'*Duration:*\n {execution_time_minutes} minutes {execution_time_seconds} seconds \n'
+            f'*Duration:*\n {build["duration"] // 60} minutes {build["duration"] % 60} seconds \n'
         )
         message[2]['elements'][0]['url'] = (
             f'https://github.com/nifadyev/cubic-spline-interpolator/commit/{build["commit_sha"]}')
@@ -92,16 +96,14 @@ class Slack(RTMClient):
 
     @staticmethod
     def make_failure_message(build: Dict[str, Any], error_strings, failed_job_id) -> List:
+        # ! Duplicates method make_message() except Job URL (instead of PR URL)
         less_log = '\n'.join(string for string in error_strings)
-        execution_time_minutes = build['duration'] // 60
-        execution_time_seconds = build['duration'] % 60
-
         message = BRANCH_FAIL_BLOCKS.copy()
 
         message[1]['text']['text'] = (
             f'*Branch:*\n {build["branch"]} \n'
             f'*Commit:*\n {build["message"]} \n'
-            f'*Duration:*\n {execution_time_minutes} minutes {execution_time_seconds} seconds \n'
+            f'*Duration:*\n {build["duration"] // 60} minutes {build["duration"] % 60} seconds \n'
             f'*Log (last 3 strings)*:\n ```{less_log}``` \n'
         )
         message[2]['elements'][0]['url'] = (
@@ -111,34 +113,22 @@ class Slack(RTMClient):
 
         return message
 
+    # ? Init token and channel_id as globals
+    # ! Using web_client throws an error after successfull message send
     @staticmethod
-    def send_message(web_client: WebClient, channel_id: str, message) -> bool:
+    def send_message(channel_id, message) -> bool:
         """Send message to channel using provided WebClient and return request status.
 
         Args:
-            web_client: Slack web client.
             channel_id: Slack channel ID.
             message: message to be sent.
 
         Returns:
             bool: True or False request execution status.
         """
-        # ! Using web_client throws an error after successfull message send 
-        # if web_client:
-        #     response = web_client.chat_postMessage(
-        #         channel=channel_id,
-        #         # text=message,
-        #         blocks=message
-        #     )
-
-        #     return response['ok']
-        # return False
-        # # * For now web_client is always passed
-        # # ! Except for testing purposes
-        # else:
         response = requests.post(
             url='https://slack.com/api/chat.postMessage',
-            json={"channel": "DP7AHFC13", "blocks": message},
+            json={"channel": channel_id, "blocks": message},
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": f"Bearer {SLACKBOT_TOKEN}"
@@ -147,8 +137,6 @@ class Slack(RTMClient):
 
         print(f'sent status: {response.status_code}')
         print(response.text)
-        # ? Why `Message has not been sent to DP7AHFC13` if it is sent as expected
-        # {"ok":false,"error":"invalid_blocks_format"}
-        # Log response.json()['error']
+
         # ! Ignore invalid block formats
         return response.status_code == '200'
