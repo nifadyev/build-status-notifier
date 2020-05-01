@@ -40,7 +40,6 @@ class Slack(RTMClient):
         print('message received\n')
 
         data = payload['data']
-        web_client = payload['web_client']
         # ! Check why default value is list
         print(data.get('text'))
         command_and_args = data.get('text', []).split()
@@ -48,7 +47,7 @@ class Slack(RTMClient):
         # Only messages like 'monitor skippy' are supported
         # This check fixes Exception after notifying about finished builds
         if len(command_and_args) == 2:
-            self.ci_system.execute_command(web_client, *command_and_args)
+            self.ci_system.execute_command(*command_and_args)
 
     # TODO: Accept only event and branch (or flag is_merge_commit)
     @staticmethod
@@ -114,7 +113,6 @@ class Slack(RTMClient):
         return message
 
     # ? Init token and channel_id as globals
-    # ! Using web_client throws an error after successfull message send
     @staticmethod
     def send_message(channel_id, message) -> bool:
         """Send message to channel using provided WebClient and return request status.

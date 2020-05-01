@@ -7,7 +7,8 @@ import requests
 
 from src.notifiers.slack import Slack
 # TODO: Check if it is working
-# from src.notifiers.slack.Slck import send_message
+# from src.notifiers.slack.Slack import send_message
+
 
 class Travis():
     """Class for sending requests via Travis API and parsing their response."""
@@ -32,11 +33,10 @@ class Travis():
         self.frequency = config['travis']['request_frequency']
         self.repository_id = config['travis']['repositories'][0]['id']
 
-    def execute_command(self, web_client, command, args=None):
+    def execute_command(self, command, args=None):
         """Execute requested command with optional arguments.
 
         Args:
-            web_client: Slack web client.
             command: Valid keyword.
             args: Optional arguments for some commands.
 
@@ -45,19 +45,14 @@ class Travis():
         """
         if command == 'monitor':
             print(f'Executing command {command} {args or ""}')
-            self.monitor_active_builds(web_client)
+            self.monitor_active_builds()
         else:
             print('Unsupported command')
 
-    def monitor_active_builds(self, web_client):
-        """Check build statuses for specified author and repository.
-
-        Args:
-            web_client: Slack web client.
-            repository: Supported repository name.
-            author: author name in Drone.
-        """
+    def monitor_active_builds(self):
+        """Check build statuses for specified author and repository."""
         monitored_builds = self.get_running_builds()
+
         # Initial check for author's active builds
         if not monitored_builds:
             print('Running builds are not found')
