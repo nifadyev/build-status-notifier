@@ -1,12 +1,12 @@
 """Module for testing basic bot functions."""
 
-import pytest
 import json
-import bot
 from unittest import mock
-from src.ci_systems.drone import Drone
-from src.ci_systems.travis import Travis
+import pytest
+
+import bot
 import src.ci_systems.travis as travis
+from src.ci_systems.travis import Travis
 from src.notifiers.slack import Slack
 
 

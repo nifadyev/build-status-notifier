@@ -1,8 +1,7 @@
 """Main module for running bot with one of available pair of CI system and notifier."""
 
 import json
-from typing import Union, Type, Dict
-from src.ci_systems.drone import Drone
+from typing import Type, Dict
 from src.ci_systems.travis import Travis
 from src.notifiers.slack import Slack
 
@@ -25,7 +24,7 @@ def load_config(path: str) -> Dict[str, str]:
         return json.load(config)
 
 
-def run_bot(ci_system: Union[Type[Drone], Type[Travis]], notifier: Union[Type[Slack], ]) -> None:
+def run_bot(ci_system: Type[Travis], notifier: Type[Slack]) -> None:
     """Start listening for incoming messages.
 
     Args:
@@ -36,16 +35,10 @@ def run_bot(ci_system: Union[Type[Drone], Type[Travis]], notifier: Union[Type[Sl
     # config = load_config(CONFIG_PATH)
     # ? How to get required tokens based on chosen ci_system and notifier
     chosen_notifier = notifier(config['slack']['token'], ci_system(config))
-    # chosen_notifier = notifier(config['slack']['token'], ci_system(config['drone']))
-    # chosen_notifier = notifier(config['slackbot_token'], ci_system())
-    # ! RTMClient has method stop
     chosen_notifier.start()
 
 
 if __name__ == "__main__":
-    # ? Decorator for wrapping up run_bot with logging
     print('Bot is running\n')
-    # ! Slack RTMClient ATM cannot be stopped properly on Windows (not implemented)
     run_bot(Travis, Slack)
-    # run_bot(Drone, Slack)
     print('Bot has been terminated')
