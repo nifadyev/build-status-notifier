@@ -1,28 +1,27 @@
 """Module for dealing with Travis CI API."""
 
 import time
-# from typing import Dict, Any, Union, List, Tuple
+from typing import Dict, Any, Union, List, Tuple
 
 import requests
 
-from src.notifiers.slack import Slack
+from ..notifiers.slack import Slack
+from ..custom_types import CONFIG, MESSAGE, BUILD
 
 
 class Travis():
     """Class for sending requests via Travis API and parsing their response."""
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize class instance.
 
         Args:
-            config: part of JSON config file related to Drone CI API.
+            config: Travis API specific credentials.
 
         Attributes:
-            token: key for communicating with Drone CI API.
-            author: author name in Drone.
-            channel: bot direct message ID.
-            repositories: list of monitored repositories.
-            root_url: root for full repository url.
+            token: unique key.
+            author: author alias.
+            repository_id: repository ID in Travis.
             frequency: interval in seconds between consecutive requests to API.
         """
         self.token = config['token']
@@ -30,15 +29,12 @@ class Travis():
         self.frequency = config['request_frequency']
         self.repository_id = config['repositories'][0]['id']
 
-    def execute_command(self, command, args=None):
+    def execute_command(self, command: str, args: List = None) -> None:
         """Execute requested command with optional arguments.
 
         Args:
-            command: Valid keyword.
-            args: Optional arguments for some commands.
-
-        Returns:
-            int: Execution status
+            command: valid keyword.
+            args: optional arguments for some commands.
         """
         if command == 'monitor':
             print(f'Executing command {command} {args or ""}')
@@ -55,14 +51,9 @@ class Travis():
             print('Running builds are not found')
             return
 
-        # builds with what names are monitored
-        # what stages are passed, how many are being ran ATM
-        print(f'{len(monitored_builds)} builds are monitored')
-
         # Run endless loop till all build are finished
         while True:
             running_builds = self.get_running_builds()
-            # ? It is necessary per each iteration
             print(f'{len(running_builds)} builds are are still in progress')
 
             # Initial builds are still being ran
@@ -72,47 +63,24 @@ class Travis():
                 continue
 
             for build in self.get_finished_builds(monitored_builds, running_builds):
-                request = requests.get(
-                    f'https://api.travis-ci.com/build/{build["id"]}',
-                    headers={
-                        'Travis-API-Version': '3',
-                        'User-Agent': 'API Explorer',
-                        'Authorization': f'token {self.token}'
-                    }
-                )
-                finished_build = self.parse_build(build=request.json())
+                # TODO: sep method for processing finished build
+                finished_build_response = self.request_factory(f'build/{build["id"]}')
+                finished_build = self.parse_build(build=finished_build_response.json())
 
                 # Do not send message if build status has changed from `pending` to `running`
-                # TODO: check this values for Travis and move this to common const
                 if finished_build['status'] in ('started', 'created', 'pending', 'running'):
                     continue
 
                 if finished_build['status'] == 'failed':
-                    print(finished_build)
-                    jobs_request = requests.get(
-                        f'https://api.travis-ci.com/build/{finished_build["id"]}/jobs',
-                        headers={
-                            'Travis-API-Version': '3',
-                            'User-Agent': 'API Explorer',
-                            'Authorization': f'token {self.token}'
-                        }
-                    )
-                    # import pdb; pdb.set_trace()
-                    print(jobs_request.json())
-                    failed_job = self.get_failed_job(jobs_request.json())
+                    jobs_response = self.request_factory(f'build/{finished_build["id"]}/jobs')
+                    failed_job = self.get_failed_job(jobs_response.json())
 
                     # ! Does not suitable for multiple failed jobs
-                    jobs_log_request = requests.get(
-                        f'https://api.travis-ci.com/job/{failed_job["id"]}/log',
-                        headers={
-                            'Travis-API-Version': '3',
-                            'User-Agent': 'API Explorer',
-                            'Authorization': f'token {self.token}'
-                        }
-                    )
-                    jobs_log = jobs_log_request.json()['content']
+                    jobs_log_response = self.request_factory(f'job/{failed_job["id"]}/log')
+                    jobs_log = jobs_log_response.json()['content']
                     # Last 3 strings are useless, display -8:-3 strings
                     error_strings = jobs_log.splitlines()[-8:-3]
+
                     Slack.notify(finished_build, error_strings, failed_job['id'])
                 else:
                     Slack.notify(finished_build)
@@ -130,30 +98,17 @@ class Travis():
     def get_running_builds(self):
         """Return list of active builds for specified repository and author.
 
-        Args:
-            repository: Supported repository name.
-
         Returns:
             tuple: sequence of active author's builds.
         """
         # Get list of all builds
-        # TODO: create factory or wrapper for request, or make headers constant
-        request = requests.get(
-            f'https://api.travis-ci.com/repo/{self.repository_id}/builds',
-            headers={
-                'Travis-API-Version': '3',
-                'User-Agent': 'API Explorer',
-                'Authorization': f'token {self.token}'
-            }
-        )
-
+        request = self.request_factory(f'repo/{self.repository_id}/builds')
         builds = request.json()['builds']
 
-        # TODO: calculate build duration, does not pass started_at and finished_at
         # ! Everything is correct, builds are finished, that is why empty tuple is returned
         return tuple(
             self.parse_build(build) for build in builds
-            if build['created_by']['login'] == self.author\
+            if build['created_by']['login'] == self.author
                 and (build['state'] == 'started' or build['state'] == 'created')
         )
 
@@ -171,6 +126,7 @@ class Travis():
         return tuple(build for build in initial_builds if build not in running_builds)
 
     def parse_build(self, build):
+        # ? use id-build info structure for faster comparison (by id)
         return {
             'id': build['id'],
             'event': build['event_type'],
@@ -187,3 +143,18 @@ class Travis():
         for job in jobs['jobs']:
             if job['state'] == 'failed':
                 return job
+
+    def request_factory(self, path):
+        """Factory method for making requests to Travis API.
+
+        Arguments:
+            path {[type]} -- [description]
+        """
+        return requests.get(
+            f'https://api.travis-ci.com/{path}',
+            headers={
+                'Travis-API-Version': '3',
+                'User-Agent': 'API Explorer',
+                'Authorization': f'token {self.token}'
+            }
+        )
