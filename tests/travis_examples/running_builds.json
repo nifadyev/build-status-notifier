@@ -33,7 +33,7 @@
             },
             "id": 160889522,
             "number": "5",
-            "state": "running",
+            "state": "started",
             "duration": 104,
             "event_type": "push",
             "previous_state": "passed",
