@@ -6,8 +6,6 @@ import time
 import requests
 
 from src.notifiers.slack import Slack
-# TODO: Check if it is working
-# from src.notifiers.slack.Slack import send_message
 
 
 class Travis():
@@ -114,25 +112,16 @@ class Travis():
                     )
                     jobs_log = jobs_log_request.json()['content']
                     # Last 3 strings are useless, display -8:-3 strings
-                    # * Or better to set how many strings to show in config
-                    # * For example, if there are lots of tests, just print info about how many of them failed
-                    # * But, of course, do it later
                     error_strings = jobs_log.splitlines()[-8:-3]
-                    message = Slack.make_failure_message(
-                        finished_build, error_strings, failed_job['id'])
+                    Slack.notify(finished_build, error_strings, failed_job['id'])
                 else:
-                    message = Slack.make_message(finished_build)
-
-                # ? Yield messages from monitor_active_builds and execute_commands
-                if not Slack.send_message(message):
-                    print('Message has not been sent')
+                    Slack.notify(finished_build)
 
             monitored_builds = running_builds
 
             if not monitored_builds:
                 print('Finishing monitoring')
-                if not Slack.send_message('Running builds are finished'):
-                    print('Message has not been sent')
+                Slack.notify(message='Running builds are finished')
                 # This break does not end endless loop, use some flag to end it (or never end it)
                 break
 
