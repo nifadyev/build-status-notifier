@@ -1,31 +1,32 @@
-"""Module for sending messages to Slack channels."""
+"""Module for handling requests to Slack API."""
 
 import json
-from typing import Callable, Dict, Any
-import requests
+from typing import Callable, Dict, Any, List, Union
 
+import requests
 from slack import RTMClient
 
 from .message_templates import BRANCH_SUCCESS_BLOCKS, BRANCH_FAIL_BLOCKS
+from ..custom_types import CONFIG, MESSAGE, BUILD
 
 
 # Global credentials allow to call some methods as static in CI systems modules
 with open('config.json') as conf:
-    CONFIG = json.load(conf)
+    CONFIGURATION = json.load(conf)
 
-    SLACKBOT_TOKEN = CONFIG['slack']['token']
-    CHANNEL_ID = CONFIG['slack']['bot_direct_messages_id']
+    SLACKBOT_TOKEN = CONFIGURATION['slack']['token']
+    CHANNEL_ID = CONFIGURATION['slack']['bot_direct_messages_id']
 
 
 class Slack(RTMClient):
     """Class for sending messages and listening to them via Slack API."""
 
-    def __init__(self, config, ci_system: Callable) -> None:
+    def __init__(self, config: Dict[str, str], ci_system: Callable) -> None:
         """Initialize class instance and listen to incoming messages.
 
         Args:
-            config: dict with specific Slack API credentials.
-            ci_system: Travis class instance.
+            config: Slack API specific credentials.
+            ci_system: Travis class instance for calling static method.
         """
         super(Slack, self).__init__(token=config['token'])
 
@@ -40,10 +41,7 @@ class Slack(RTMClient):
         Args:
             payload - The initial state returned when establishing an RTM connection.
         """
-        print('message received\n')
-
-        data = payload['data']
-        command_and_args = data.get('text', '').split()
+        command_and_args = payload['data'].get('text', '').split()
 
         # Supported message format: <command> <repository>
         # This check fixes Exception after notifying about finished builds
@@ -51,15 +49,15 @@ class Slack(RTMClient):
             self.ci_system.execute_command(*command_and_args)
 
     @staticmethod
-    def _make_common_message(build, is_failed=False):
-        """Create informative message about the build's status.
+    def _make_common_message(build: BUILD, is_failed: bool = False) -> MESSAGE:
+        """Fill blocks template with common information about build.
 
-        def make_message(build: Dict[str, Any]) -> List:
         Args:
-            build: dict with information about build.
+            build: necessary information about build.
+            is_failed: indicates failed build.
 
         Returns:
-            str: detailed information about build execution.
+            list: detailed information about build execution.
         """
         message = BRANCH_FAIL_BLOCKS.copy() if is_failed else BRANCH_SUCCESS_BLOCKS.copy()
 
@@ -74,14 +72,37 @@ class Slack(RTMClient):
         return message
 
     @staticmethod
-    def _make_success_message(build):
+    def _make_success_message(build: BUILD) -> MESSAGE:
+        """Fill blocks template with information about successful build.
+
+        Pull request link is included for such builds.
+
+        Args:
+            build: necessary information about build.
+
+        Returns:
+            list: detailed information about build execution.
+        """
         message = Slack._make_common_message(build)
         message[2]['elements'][1]['url'] = build['pr_url']
 
         return message
 
     @staticmethod
-    def _make_failure_message(build, error_strings, failed_job_id):
+    def _make_failure_message(
+            build: BUILD, error_strings: List[str], failed_job_id: str) -> MESSAGE:
+        """Fill blocks template with information about failed build.
+
+        Logs and failed Travis Job link are included for such builds.
+
+        Args:
+            build: necessary information about build.
+            error_strings: last lines of job log with useful information about fail.
+            failed_job_id: ID for composing valid link to failed job.
+
+        Returns:
+            list: detailed information about build execution.
+        """
         message = Slack._make_common_message(build, is_failed=True)
         less_log = '\n'.join(string for string in error_strings)
 
@@ -93,24 +114,20 @@ class Slack(RTMClient):
         return message
 
     @staticmethod
-    def _send_message(message):
-        """Send message to channel using provided WebClient and return request status.
+    def _send_message(message: Union[MESSAGE, str]) -> None:
+        """Send message to specified channel and return request status.
+
+        Send blocks for rich-text message and plain text to be used as Slack desktop notification.
 
         Args:
-            channel_id: Slack channel ID.
-            message: message to be sent.
-
-        Returns:
-            bool: True or False request execution status.
+            message: filled blocks template or plain text.
         """
-        preview_notification_text = (
-            message[0]['text']['text'] if isinstance(message, list) else message)
-        response = requests.post(
+        notification_text = message[0]['text']['text'] if isinstance(message, list) else message
+        requests.post(
             url='https://slack.com/api/chat.postMessage',
             json={
                 'channel': CHANNEL_ID,
-                # Used as preview for desktop notifications
-                'text': preview_notification_text,
+                'text': notification_text,
                 'blocks': message
             },
             headers={
@@ -119,19 +136,26 @@ class Slack(RTMClient):
             }
         )
 
-        print(f'sent status: {response.status_code}')
-        print(response.text)
-
-        # ! Ignore invalid block formats
-        return response.status_code == '200'
-
     @staticmethod
-    def notify(build=None, error_strings=None, failed_job_id=None, message=None):
+    def notify(
+            build: BUILD = None,
+            error_strings: List[str] = None,
+            failed_job_id: str = None,
+            message: str = None
+    ) -> None:
+        """Compose suitable message and send it to specified channel.
+
+        Keyword Arguments:
+            build: necessary information about build.
+            error_strings: last lines of job log with useful information about fail.
+            failed_job_id: ID for composing valid link to failed job.
+            message: simple plain text with non build specific information.
+        """
         if not build and message:
             blocks = message
-        elif error_strings and failed_job_id:
+        elif build and error_strings and failed_job_id:
             blocks = Slack._make_failure_message(build, error_strings, failed_job_id)
-        else:
+        elif build:
             blocks = Slack._make_success_message(build)
 
         Slack._send_message(blocks)
