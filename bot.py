@@ -34,7 +34,8 @@ def run_bot(ci_system: Type[Travis], notifier: Type[Slack]) -> None:
     config = load_config('config.json')
     # config = load_config(CONFIG_PATH)
     # ? How to get required tokens based on chosen ci_system and notifier
-    chosen_notifier = notifier(config['slack']['token'], ci_system(config))
+    chosen_notifier = notifier(config['slack'], ci_system(config['travis']))
+    # chosen_notifier = notifier(config['slack']['token'], ci_system(config))
     chosen_notifier.start()
 
 

@@ -27,11 +27,10 @@ class Travis():
             root_url: root for full repository url.
             frequency: interval in seconds between consecutive requests to API.
         """
-        self.token = config['travis']['token']
-        self.author = config['travis']['author']['login']
-        self.channel = config['slack']['bot_direct_messages_id']
-        self.frequency = config['travis']['request_frequency']
-        self.repository_id = config['travis']['repositories'][0]['id']
+        self.token = config['token']
+        self.author = config['author']['login']
+        self.frequency = config['request_frequency']
+        self.repository_id = config['repositories'][0]['id']
 
     def execute_command(self, command, args=None):
         """Execute requested command with optional arguments.
@@ -125,16 +124,16 @@ class Travis():
                     message = Slack.make_message(finished_build)
 
                 # ? Yield messages from monitor_active_builds and execute_commands
-                if not Slack.send_message(self.channel, message):
-                    print(f'Message has not been sent to {self.channel}')
+                if not Slack.send_message(message):
+                    print('Message has not been sent')
 
             monitored_builds = running_builds
 
             if not monitored_builds:
                 print('Finishing monitoring')
-                if not Slack.send_message(self.channel, 'Running builds are finished'):
-                    print(f'Message has not been sent to {self.channel}')
-                # This  break does not end endless loop, use some flag to end it (or never end it)
+                if not Slack.send_message('Running builds are finished'):
+                    print('Message has not been sent')
+                # This break does not end endless loop, use some flag to end it (or never end it)
                 break
 
             time.sleep(self.frequency)
