@@ -1,16 +1,18 @@
 """Module for sending messages to Slack channels."""
-import requests
 import json
 from typing import Callable, Dict, Any, List
+import requests
+
 from slack import RTMClient
 
 from .message_templates import BRANCH_SUCCESS_BLOCKS, BRANCH_FAIL_BLOCKS
 
 
-# with open('/home/nifadyev/code/build-status-notifier/config.json') as conf:
 with open('config.json') as conf:
     CONFIG = json.load(conf)
+
     SLACKBOT_TOKEN = CONFIG['slack']['token']
+    CHANNEL_ID = CONFIG['slack']['bot_direct_messages_id']
 
 
 class Slack(RTMClient):
@@ -26,7 +28,6 @@ class Slack(RTMClient):
         super(Slack, self).__init__(token=config['token'])
 
         self.token = config['token']
-        self.channel_id = config['bot_direct_messages_id']
         self.ci_system = ci_system
 
         self.on(event='message', callback=self.listen)
@@ -60,6 +61,9 @@ class Slack(RTMClient):
         Returns:
             str: human representation of build status and what type of build was finished.
         """
+        # TODO: use message template
+        message_template = '{event} check has been {status}'
+
         if build['event'] == 'pull_request':
             return 'Pull request check has been completed'
         if build['event'] == 'push' and build['branch'] == 'master':
@@ -79,7 +83,6 @@ class Slack(RTMClient):
         Returns:
             str: detailed information about build execution.
         """
-
         message = BRANCH_SUCCESS_BLOCKS.copy()
 
         message[1]['text']['text'] = (
@@ -112,9 +115,11 @@ class Slack(RTMClient):
 
         return message
 
+    # def _ma
+
     # ? Init token and channel_id as globals
     @staticmethod
-    def send_message(channel_id, message) -> bool:
+    def send_message(message) -> bool:
         """Send message to channel using provided WebClient and return request status.
 
         Args:
@@ -126,7 +131,7 @@ class Slack(RTMClient):
         """
         response = requests.post(
             url='https://slack.com/api/chat.postMessage',
-            json={"channel": channel_id, "blocks": message},
+            json={"channel": CHANNEL_ID, "blocks": message},
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": f"Bearer {SLACKBOT_TOKEN}"
