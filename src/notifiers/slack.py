@@ -7,7 +7,7 @@ import requests
 from slack import RTMClient
 
 from .message_templates import BRANCH_SUCCESS_BLOCKS, BRANCH_FAIL_BLOCKS
-from ..custom_types import CONFIG, MESSAGE, BUILD
+from ..custom_types import MESSAGE, BUILD
 
 
 # Global credentials allow to call some methods as static in CI systems modules
@@ -49,44 +49,33 @@ class Slack(RTMClient):
             self.ci_system.execute_command(*command_and_args)
 
     @staticmethod
-    def _make_common_message(build: BUILD, is_failed: bool = False) -> MESSAGE:
-        """Fill blocks template with common information about build.
+    def notify(
+            build: BUILD = None,
+            error_strings: List[str] = None,
+            failed_job_id: str = None,
+            message: str = None
+    ) -> str:
+        """Compose suitable message and send it to specified channel.
 
-        Args:
+        Keyword Args:
             build: necessary information about build.
-            is_failed: indicates failed build.
+            error_strings: last lines of job log with useful information about fail.
+            failed_job_id: ID for composing valid link to failed job.
+            message: simple plain text with non build specific information.
 
         Returns:
-            list: detailed information about build execution.
+            str: response HTTP code from method _send_message().
         """
-        message = BRANCH_FAIL_BLOCKS.copy() if is_failed else BRANCH_SUCCESS_BLOCKS.copy()
+        if not build and message:
+            blocks = message
+        elif build and error_strings and failed_job_id:
+            blocks = Slack._make_failure_message(build, error_strings, failed_job_id)
+        elif build:
+            blocks = Slack._make_success_message(build)
 
-        message[1]['text']['text'] = (
-            f'*Branch:*\n {build["branch"]} \n'
-            f'*Commit:*\n {build["message"]} \n'
-            f'*Duration:*\n {build["duration"] // 60} minutes {build["duration"] % 60} seconds \n'
-        )
-        message[2]['elements'][0]['url'] = (
-            f'https://github.com/nifadyev/cubic-spline-interpolator/commit/{build["commit_sha"]}')
+        status_code = Slack._send_message(blocks)
 
-        return message
-
-    @staticmethod
-    def _make_success_message(build: BUILD) -> MESSAGE:
-        """Fill blocks template with information about successful build.
-
-        Pull request link is included for such builds.
-
-        Args:
-            build: necessary information about build.
-
-        Returns:
-            list: detailed information about build execution.
-        """
-        message = Slack._make_common_message(build)
-        message[2]['elements'][1]['url'] = build['pr_url']
-
-        return message
+        return status_code
 
     @staticmethod
     def _make_failure_message(
@@ -114,16 +103,59 @@ class Slack(RTMClient):
         return message
 
     @staticmethod
-    def _send_message(message: Union[MESSAGE, str]) -> None:
+    def _make_success_message(build: BUILD) -> MESSAGE:
+        """Fill blocks template with information about successful build.
+
+        Pull request link is included for such builds.
+
+        Args:
+            build: necessary information about build.
+
+        Returns:
+            list: detailed information about build execution.
+        """
+        message = Slack._make_common_message(build)
+        message[2]['elements'][1]['url'] = build['pr_url']
+
+        return message
+
+    @staticmethod
+    def _make_common_message(build: BUILD, is_failed: bool = False) -> MESSAGE:
+        """Fill blocks template with common information about build.
+
+        Args:
+            build: necessary information about build.
+            is_failed: indicates failed build.
+
+        Returns:
+            list: detailed information about build execution.
+        """
+        message = BRANCH_FAIL_BLOCKS.copy() if is_failed else BRANCH_SUCCESS_BLOCKS.copy()
+
+        message[1]['text']['text'] = (
+            f'*Branch:*\n {build["branch"]} \n'
+            f'*Commit:*\n {build["message"]} \n'
+            f'*Duration:*\n {build["duration"] // 60} minutes {build["duration"] % 60} seconds \n'
+        )
+        message[2]['elements'][0]['url'] = (
+            f'https://github.com/nifadyev/cubic-spline-interpolator/commit/{build["commit_sha"]}')
+
+        return message
+
+    @staticmethod
+    def _send_message(message: Union[MESSAGE, str]) -> str:
         """Send message to specified channel and return request status.
 
         Send blocks for rich-text message and plain text to be used as Slack desktop notification.
 
         Args:
             message: filled blocks template or plain text.
+
+        Returns:
+            str: response HTTP code.
         """
         notification_text = message[0]['text']['text'] if isinstance(message, list) else message
-        requests.post(
+        response = requests.post(
             url='https://slack.com/api/chat.postMessage',
             json={
                 'channel': CHANNEL_ID,
@@ -136,26 +168,4 @@ class Slack(RTMClient):
             }
         )
 
-    @staticmethod
-    def notify(
-            build: BUILD = None,
-            error_strings: List[str] = None,
-            failed_job_id: str = None,
-            message: str = None
-    ) -> None:
-        """Compose suitable message and send it to specified channel.
-
-        Keyword Arguments:
-            build: necessary information about build.
-            error_strings: last lines of job log with useful information about fail.
-            failed_job_id: ID for composing valid link to failed job.
-            message: simple plain text with non build specific information.
-        """
-        if not build and message:
-            blocks = message
-        elif build and error_strings and failed_job_id:
-            blocks = Slack._make_failure_message(build, error_strings, failed_job_id)
-        elif build:
-            blocks = Slack._make_success_message(build)
-
-        Slack._send_message(blocks)
+        return response.status_code
