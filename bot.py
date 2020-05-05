@@ -2,17 +2,13 @@
 
 import json
 from typing import Type, Dict
+
 from src.ci_systems.travis import Travis
 from src.notifiers.slack import Slack
 
 
-CONFIG_PATH = '/home/nifadyev/code/build-status-notifier/config.json'
-
-
-def load_config(path: str) -> Dict[str, str]:
+def load_config(path: str) -> Dict[str, Any]:
     """Load JSON configuration file with required user specific data.
-
-    File should contain tokens for used CI system APIs and channel and user ids for notifier.
 
     Args:
         path: full path to JSON configuration file.
@@ -32,10 +28,8 @@ def run_bot(ci_system: Type[Travis], notifier: Type[Slack]) -> None:
         notifier: Slack class.
     """
     config = load_config('config.json')
-    # config = load_config(CONFIG_PATH)
-    # ? How to get required tokens based on chosen ci_system and notifier
     chosen_notifier = notifier(config['slack'], ci_system(config['travis']))
-    # chosen_notifier = notifier(config['slack']['token'], ci_system(config))
+
     chosen_notifier.start()
 
 
