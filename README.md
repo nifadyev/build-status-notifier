@@ -47,7 +47,7 @@ Create `config.json` in root directory using template below:
         "bot_direct_messages_id": "channel_id"
     },
     "travis": {
-        "token": "travis_api_token"
+        "token": "travis_api_token",
         "author": {
             "id": 12345,
             "login": "author"
