@@ -1,0 +1,359 @@
+{
+    "@type": "builds",
+    "@href": "/repo/11640917/builds",
+    "@representation": "standard",
+    "@pagination": {
+        "limit": 25,
+        "offset": 0,
+        "count": 5,
+        "is_first": true,
+        "is_last": true,
+        "next": null,
+        "prev": null,
+        "first": {
+            "@href": "/repo/11640917/builds",
+            "offset": 0,
+            "limit": 25
+        },
+        "last": {
+            "@href": "/repo/11640917/builds",
+            "offset": 0,
+            "limit": 25
+        }
+    },
+    "builds": [
+        {
+            "@type": "build",
+            "@href": "/build/160889522",
+            "@representation": "standard",
+            "@permissions": {
+                "read": true,
+                "cancel": true,
+                "restart": true
+            },
+            "id": 160889522,
+            "number": "5",
+            "state": "started",
+            "duration": 104,
+            "event_type": "push",
+            "previous_state": "passed",
+            "pull_request_title": null,
+            "pull_request_number": null,
+            "started_at": "2020-04-19T08:55:12Z",
+            "finished_at": "2020-04-19T08:56:28Z",
+            "private": false,
+            "repository": {
+                "@type": "repository",
+                "@href": "/repo/11640917",
+                "@representation": "minimal",
+                "id": 11640917,
+                "name": "cubic-spline-interpolator",
+                "slug": "nifadyev/cubic-spline-interpolator"
+            },
+            "branch": {
+                "@type": "branch",
+                "@href": "/repo/11640917/branch/master",
+                "@representation": "minimal",
+                "name": "master"
+            },
+            "tag": null,
+            "commit": {
+                "@type": "commit",
+                "@representation": "minimal",
+                "id": 332827201,
+                "sha": "8b31366d0fe264a3ad0dc587a3bcdb497e9cea41",
+                "ref": "refs/heads/master",
+                "message": "Delete extra comments and steps",
+                "compare_url": "https://github.com/nifadyev/cubic-spline-interpolator/compare/550ac4b4b83d...8b31366d0fe2",
+                "committed_at": "2020-04-19T08:54:27Z"
+            },
+            "jobs": [
+                {
+                    "@type": "job",
+                    "@href": "/job/320846405",
+                    "@representation": "minimal",
+                    "id": 320846405
+                },
+                {
+                    "@type": "job",
+                    "@href": "/job/320846406",
+                    "@representation": "minimal",
+                    "id": 320846406
+                }
+            ],
+            "stages": [],
+            "created_by": {
+                "@type": "user",
+                "@href": "/user/1356679",
+                "@representation": "minimal",
+                "id": 1356679,
+                "login": "nifadyev"
+            },
+            "updated_at": "2020-04-19T08:56:28.870Z"
+        },
+        {
+            "@type": "build",
+            "@href": "/build/160854311",
+            "@representation": "standard",
+            "@permissions": {
+                "read": true,
+                "cancel": true,
+                "restart": true
+            },
+            "id": 160854311,
+            "number": "4",
+            "state": "passed",
+            "duration": 101,
+            "event_type": "push",
+            "previous_state": "failed",
+            "pull_request_title": null,
+            "pull_request_number": null,
+            "started_at": "2020-04-18T18:24:43Z",
+            "finished_at": "2020-04-18T18:26:00Z",
+            "private": false,
+            "repository": {
+                "@type": "repository",
+                "@href": "/repo/11640917",
+                "@representation": "minimal",
+                "id": 11640917,
+                "name": "cubic-spline-interpolator",
+                "slug": "nifadyev/cubic-spline-interpolator"
+            },
+            "branch": {
+                "@type": "branch",
+                "@href": "/repo/11640917/branch/master",
+                "@representation": "minimal",
+                "name": "master"
+            },
+            "tag": null,
+            "commit": {
+                "@type": "commit",
+                "@representation": "minimal",
+                "id": 332705572,
+                "sha": "550ac4b4b83dda320fe89587948bc1e7c77466ff",
+                "ref": "refs/heads/master",
+                "message": "Add pip install -r requirements.txt",
+                "compare_url": "https://github.com/nifadyev/cubic-spline-interpolator/compare/901a4cbfa641...550ac4b4b83d",
+                "committed_at": "2020-04-18T18:24:07Z"
+            },
+            "jobs": [
+                {
+                    "@type": "job",
+                    "@href": "/job/320767593",
+                    "@representation": "minimal",
+                    "id": 320767593
+                },
+                {
+                    "@type": "job",
+                    "@href": "/job/320767594",
+                    "@representation": "minimal",
+                    "id": 320767594
+                }
+            ],
+            "stages": [],
+            "created_by": {
+                "@type": "user",
+                "@href": "/user/1356679",
+                "@representation": "minimal",
+                "id": 1356679,
+                "login": "nifadyev"
+            },
+            "updated_at": "2020-04-18T18:26:00.211Z"
+        },
+        {
+            "@type": "build",
+            "@href": "/build/160853853",
+            "@representation": "standard",
+            "@permissions": {
+                "read": true,
+                "cancel": true,
+                "restart": true
+            },
+            "id": 160853853,
+            "number": "3",
+            "state": "failed",
+            "duration": 70,
+            "event_type": "push",
+            "previous_state": "failed",
+            "pull_request_title": null,
+            "pull_request_number": null,
+            "started_at": "2020-04-18T18:18:06Z",
+            "finished_at": "2020-04-18T18:18:58Z",
+            "private": false,
+            "repository": {
+                "@type": "repository",
+                "@href": "/repo/11640917",
+                "@representation": "minimal",
+                "id": 11640917,
+                "name": "cubic-spline-interpolator",
+                "slug": "nifadyev/cubic-spline-interpolator"
+            },
+            "branch": {
+                "@type": "branch",
+                "@href": "/repo/11640917/branch/master",
+                "@representation": "minimal",
+                "name": "master"
+            },
+            "tag": null,
+            "commit": {
+                "@type": "commit",
+                "@representation": "minimal",
+                "id": 332703998,
+                "sha": "901a4cbfa6415640ad7381c0eb5d66d441db0f6c",
+                "ref": "refs/heads/master",
+                "message": "Add job for Windows",
+                "compare_url": "https://github.com/nifadyev/cubic-spline-interpolator/compare/6f4841337d7d...901a4cbfa641",
+                "committed_at": "2020-04-18T18:15:29Z"
+            },
+            "jobs": [
+                {
+                    "@type": "job",
+                    "@href": "/job/320766423",
+                    "@representation": "minimal",
+                    "id": 320766423
+                },
+                {
+                    "@type": "job",
+                    "@href": "/job/320766424",
+                    "@representation": "minimal",
+                    "id": 320766424
+                }
+            ],
+            "stages": [],
+            "created_by": {
+                "@type": "user",
+                "@href": "/user/1356679",
+                "@representation": "minimal",
+                "id": 1356679,
+                "login": "nifadyev"
+            },
+            "updated_at": "2020-04-18T18:18:58.780Z"
+        },
+        {
+            "@type": "build",
+            "@href": "/build/160853464",
+            "@representation": "standard",
+            "@permissions": {
+                "read": true,
+                "cancel": true,
+                "restart": true
+            },
+            "id": 160853464,
+            "number": "2",
+            "state": "failed",
+            "duration": 24,
+            "event_type": "push",
+            "previous_state": "canceled",
+            "pull_request_title": null,
+            "pull_request_number": null,
+            "started_at": "2020-04-18T18:09:40Z",
+            "finished_at": "2020-04-18T18:10:04Z",
+            "private": false,
+            "repository": {
+                "@type": "repository",
+                "@href": "/repo/11640917",
+                "@representation": "minimal",
+                "id": 11640917,
+                "name": "cubic-spline-interpolator",
+                "slug": "nifadyev/cubic-spline-interpolator"
+            },
+            "branch": {
+                "@type": "branch",
+                "@href": "/repo/11640917/branch/master",
+                "@representation": "minimal",
+                "name": "master"
+            },
+            "tag": null,
+            "commit": {
+                "@type": "commit",
+                "@representation": "minimal",
+                "id": 332702814,
+                "sha": "6f4841337d7d768394069ecf70834144fa2e5f87",
+                "ref": "refs/heads/master",
+                "message": "Add sample test for get_interpolation_error",
+                "compare_url": "https://github.com/nifadyev/cubic-spline-interpolator/compare/8d0acd37a828...6f4841337d7d",
+                "committed_at": "2020-04-18T18:08:32Z"
+            },
+            "jobs": [
+                {
+                    "@type": "job",
+                    "@href": "/job/320765501",
+                    "@representation": "minimal",
+                    "id": 320765501
+                }
+            ],
+            "stages": [],
+            "created_by": {
+                "@type": "user",
+                "@href": "/user/1356679",
+                "@representation": "minimal",
+                "id": 1356679,
+                "login": "nifadyev"
+            },
+            "updated_at": "2020-04-18T18:10:04.899Z"
+        },
+        {
+            "@type": "build",
+            "@href": "/build/160853387",
+            "@representation": "standard",
+            "@permissions": {
+                "read": true,
+                "cancel": true,
+                "restart": true
+            },
+            "id": 160853387,
+            "number": "1",
+            "state": "canceled",
+            "duration": 10,
+            "event_type": "push",
+            "previous_state": null,
+            "pull_request_title": null,
+            "pull_request_number": null,
+            "started_at": "2020-04-18T18:08:10Z",
+            "finished_at": "2020-04-18T18:08:20Z",
+            "private": false,
+            "repository": {
+                "@type": "repository",
+                "@href": "/repo/11640917",
+                "@representation": "minimal",
+                "id": 11640917,
+                "name": "cubic-spline-interpolator",
+                "slug": "nifadyev/cubic-spline-interpolator"
+            },
+            "branch": {
+                "@type": "branch",
+                "@href": "/repo/11640917/branch/master",
+                "@representation": "minimal",
+                "name": "master"
+            },
+            "tag": null,
+            "commit": {
+                "@type": "commit",
+                "@representation": "minimal",
+                "id": 332702557,
+                "sha": "8d0acd37a828d239c5fdcb268073ea3cf5756558",
+                "ref": "refs/heads/master",
+                "message": "Initial commit",
+                "compare_url": "https://github.com/nifadyev/cubic-spline-interpolator/compare/2c94cab6d600...8d0acd37a828",
+                "committed_at": "2020-04-18T18:06:44Z"
+            },
+            "jobs": [
+                {
+                    "@type": "job",
+                    "@href": "/job/320765352",
+                    "@representation": "minimal",
+                    "id": 320765352
+                }
+            ],
+            "stages": [],
+            "created_by": {
+                "@type": "user",
+                "@href": "/user/1356679",
+                "@representation": "minimal",
+                "id": 1356679,
+                "login": "nifadyev"
+            },
+            "updated_at": "2020-04-18T18:08:20.921Z"
+        }
+    ]
+}
