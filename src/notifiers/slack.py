@@ -115,7 +115,10 @@ class Slack(RTMClient):
             list: detailed information about build execution.
         """
         message = Slack._make_common_message(build)
-        message[2]['elements'][1]['url'] = build['pr_url']
+        message[2]['elements'][1]['url'] = (
+            'https://github.com/nifadyev/cubic-spline-interpolator/compare/'
+            f'{build["branch"]}?expand=1'
+        )
 
         return message
 
