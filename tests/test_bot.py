@@ -19,17 +19,15 @@ class MockResponse:
 
     def json(self):
         """Return JSON response's representation."""
-
         return self.json_data
 
 
 class TestBot:
 
     # * Some kind of smoke test
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_travis_builds_are_passed(self):
         travis.requests = mock.Mock()
-        # Slack.send_message = mock.Mock()
 
         with open('tests/travis_examples/running_builds.json') as initial_builds, \
                 open('tests/travis_examples/finished_builds_passed.json') as finished_build, \
@@ -42,10 +40,8 @@ class TestBot:
             ]
 
         bot.run_bot(Travis, Slack)
-        # ! manually kill test
 
-        travis.requests.get.assert_called_once()
-
+    @pytest.mark.skip
     def test_travis_build_has_failed(self):
         travis.requests = mock.Mock()
 
@@ -62,5 +58,5 @@ class TestBot:
                 MockResponse(json.load(failed_jobs), 200),
                 MockResponse(json.load(failed_job_log), 200),
             ]
-        
+
         bot.run_bot(Travis, Slack)
