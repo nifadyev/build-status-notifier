@@ -1,7 +1,7 @@
 """Main module for running bot with one of available pair of CI system and notifier."""
 
 import json
-from typing import Type, Dict
+from typing import Type, Dict, Any
 
 from src.ci_systems.travis import Travis
 from src.notifiers.slack import Slack
@@ -33,7 +33,7 @@ def run_bot(ci_system: Type[Travis], notifier: Type[Slack]) -> None:
     chosen_notifier.start()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print('Bot is running\n')
     run_bot(Travis, Slack)
     print('Bot has been terminated')

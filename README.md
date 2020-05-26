@@ -8,7 +8,7 @@ Bot guides each build from executing `git push` till its fully deployed.
 
 Messages are sent to specified Slack channel. Each message contains useful information about build execution. Moreover, it is possible to redirect straight to commit, pull request or failed Travis job.
 
-It is planned as fully automated solution out-of-the-box. The only thing developer should provide, is proper `config.json` file.
+Planned as fully automated solution out-of-the-box. The only requirements is proper `config.json` file.
 
 # Requirements
 
@@ -17,6 +17,7 @@ It is planned as fully automated solution out-of-the-box. The only thing develop
 - virtualenv (optional)
 
 ### Pip packages
+
 To install required packages use one of commands below
 
 #### Linux
@@ -66,7 +67,7 @@ Create `config.json` in root directory using template below:
 
 To run bot use command `python bot.py` in root directory.
 It will start monitoring for incoming messages.
-When message is received, builds will be monitored.
+When message is received, specified repositories are going to be monitored.
 
 ## Message examples
 
@@ -81,3 +82,5 @@ For now 2 types of messages are supported: feature branch check has passed and f
 ![](images/failure_message.png)
 
 ## Demo
+
+![](demo.gif)
